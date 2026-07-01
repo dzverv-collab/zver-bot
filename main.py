@@ -1,175 +1,152 @@
-"""
-Telegram Bot - main entry point.
-
-Commands:
-  /start   - Welcome message
-  /help    - List available commands
-  /echo    - Echo back your message
-  /about   - About this bot
-"""
-
-import logging
 import os
-
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+import logging
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (
     Application,
-    CallbackQueryHandler,
     CommandHandler,
-    ContextTypes,
     MessageHandler,
+    ConversationHandler,
+    ContextTypes,
     filters,
 )
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
+logging.basicConfig(level=logging.INFO)
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
+
+DEVICE, MODEL, MEMORY, CONDITION, DEFECTS, PHOTOS, CITY, PHONE = range(8)
+
+main_menu = ReplyKeyboardMarkup(
+    [["💰 Продать устройство", "☎️ Связаться с менеджером"]],
+    resize_keyboard=True
 )
-logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Command handlers
-# ---------------------------------------------------------------------------
-
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a welcome message when /start is issued."""
-    user = update.effective_user
-    keyboard = [
-        [
-            InlineKeyboardButton("Help 📖", callback_data="help"),
-            InlineKeyboardButton("About ℹ️", callback_data="about"),
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_html(
-        rf"Hi {user.mention_html()}! 👋"
-        "\n\nI'm your Telegram bot. Use the buttons below or send me a message.",
-        reply_markup=reply_markup,
-    )
-
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a help message when /help is issued."""
-    help_text = (
-        "Here's what I can do:\n\n"
-        "/start  – Welcome message\n"
-        "/help   – Show this help\n"
-        "/echo   – Echo your text back\n"
-        "/about  – About this bot\n\n"
-        "You can also just send me any message and I'll reply!"
-    )
-    await update.message.reply_text(help_text)
-
-
-async def echo_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Echo the text the user sent after /echo."""
-    text = " ".join(context.args)
-    if text:
-        await update.message.reply_text(f"🔁 {text}")
-    else:
-        await update.message.reply_text("Usage: /echo <your message>")
-
-
-async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send info about the bot."""
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🤖 *About this bot*\n\n"
-        "Built with [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) v21.\n\n"
-        "Edit `main.py` to add your own commands and logic.",
-        parse_mode="Markdown",
-        disable_web_page_preview=True,
+        "👋 Добро пожаловать в ZVER Store\n\n"
+        "Здесь можно быстро отправить заявку на оценку техники Apple.",
+        reply_markup=main_menu
     )
 
+async def chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Chat ID: {update.effective_chat.id}")
 
-# ---------------------------------------------------------------------------
-# Callback query handler (inline keyboard buttons)
-# ---------------------------------------------------------------------------
-
-
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle inline keyboard button presses."""
-    query = update.callback_query
-    await query.answer()
-
-    if query.data == "help":
-        help_text = (
-            "Here's what I can do:\n\n"
-            "/start  – Welcome message\n"
-            "/help   – Show this help\n"
-            "/echo   – Echo your text back\n"
-            "/about  – About this bot\n\n"
-            "You can also just send me any message and I'll reply!"
-        )
-        await query.edit_message_text(help_text)
-
-    elif query.data == "about":
-        await query.edit_message_text(
-            "🤖 Built with python-telegram-bot v21.\n\nEdit main.py to customise me!"
-        )
-
-
-# ---------------------------------------------------------------------------
-# General message handler
-# ---------------------------------------------------------------------------
-
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Reply to any plain text message."""
-    user_text = update.message.text
+async def sell_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.clear()
     await update.message.reply_text(
-        f"You said: {user_text}\n\nTry /help to see available commands."
+        "📱 Что хотите продать?\n\nНапример: iPhone, MacBook, iPad, Apple Watch"
+    )
+    return DEVICE
+
+async def device(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["device"] = update.message.text
+    await update.message.reply_text("Напишите модель устройства. Например: iPhone 13 Pro")
+    return MODEL
+
+async def model(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["model"] = update.message.text
+    await update.message.reply_text("Какая память? Например: 128 GB")
+    return MEMORY
+
+async def memory(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["memory"] = update.message.text
+    await update.message.reply_text("В каком состоянии устройство? Целое / битое / после ремонта / не включается")
+    return CONDITION
+
+async def condition(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["condition"] = update.message.text
+    await update.message.reply_text("Какие есть дефекты? Если нет — напишите «нет».")
+    return DEFECTS
+
+async def defects(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["defects"] = update.message.text
+    context.user_data["photos"] = []
+    await update.message.reply_text("📷 Пришлите фото устройства. Можно несколько. Когда закончите — напишите «готово».")
+    return PHOTOS
+
+async def photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.photo:
+        file_id = update.message.photo[-1].file_id
+        context.user_data["photos"].append(file_id)
+        await update.message.reply_text("Фото получил. Пришлите ещё или напишите «готово».")
+        return PHOTOS
+
+    if update.message.text and update.message.text.lower() == "готово":
+        await update.message.reply_text("📍 В каком вы городе?")
+        return CITY
+
+    await update.message.reply_text("Пришлите фото или напишите «готово».")
+    return PHOTOS
+
+async def city(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["city"] = update.message.text
+    await update.message.reply_text("📞 Оставьте телефон или Telegram для связи.")
+    return PHONE
+
+async def phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["phone"] = update.message.text
+
+    data = context.user_data
+    username = update.effective_user.username
+    user_link = f"@{username}" if username else update.effective_user.full_name
+
+    text = (
+        "🟢 НОВАЯ ЗАЯВКА ZVER\n\n"
+        f"👤 Клиент: {user_link}\n"
+        f"📱 Устройство: {data.get('device')}\n"
+        f"📌 Модель: {data.get('model')}\n"
+        f"💾 Память: {data.get('memory')}\n"
+        f"⚙️ Состояние: {data.get('condition')}\n"
+        f"❗️ Дефекты: {data.get('defects')}\n"
+        f"📍 Город: {data.get('city')}\n"
+        f"📞 Контакт: {data.get('phone')}"
     )
 
+    if ADMIN_CHAT_ID:
+        await context.bot.send_message(chat_id=int(ADMIN_CHAT_ID), text=text)
 
-# ---------------------------------------------------------------------------
-# Error handler
-# ---------------------------------------------------------------------------
+        for photo_id in data.get("photos", []):
+            await context.bot.send_photo(chat_id=int(ADMIN_CHAT_ID), photo=photo_id)
 
+    await update.message.reply_text(
+        "✅ Заявка отправлена!\n\nМы скоро свяжемся с вами для оценки.",
+        reply_markup=main_menu
+    )
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Log errors."""
-    logger.error("Exception while handling an update:", exc_info=context.error)
+    return ConversationHandler.END
 
+async def manager(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("☎️ Напишите нам: @zvertech")
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Заявка отменена.", reply_markup=main_menu)
+    return ConversationHandler.END
 
+def main():
+    app = Application.builder().token(TOKEN).build()
 
-def main() -> None:
-    token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    if not token:
-        raise RuntimeError(
-            "TELEGRAM_BOT_TOKEN environment variable is not set. "
-            "Add it as a secret in your project settings."
-        )
+    conv = ConversationHandler(
+        entry_points=[MessageHandler(filters.Regex("^💰 Продать устройство$"), sell_start)],
+        states={
+            DEVICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, device)],
+            MODEL: [MessageHandler(filters.TEXT & ~filters.COMMAND, model)],
+            MEMORY: [MessageHandler(filters.TEXT & ~filters.COMMAND, memory)],
+            CONDITION: [MessageHandler(filters.TEXT & ~filters.COMMAND, condition)],
+            DEFECTS: [MessageHandler(filters.TEXT & ~filters.COMMAND, defects)],
+            PHOTOS: [MessageHandler(filters.PHOTO | (filters.TEXT & ~filters.COMMAND), photos)],
+            CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, city)],
+            PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, phone)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
 
-    app = Application.builder().token(token).build()
-
-    # Commands
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("echo", echo_command))
-    app.add_handler(CommandHandler("about", about_command))
+    app.add_handler(CommandHandler("id", chat_id))
+    app.add_handler(conv)
+    app.add_handler(MessageHandler(filters.Regex("^☎️ Связаться с менеджером$"), manager))
 
-    # Inline keyboard callbacks
-    app.add_handler(CallbackQueryHandler(button_handler))
-
-    # Plain text messages
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    # Errors
-    app.add_error_handler(error_handler)
-
-    logger.info("Bot is running. Press Ctrl-C to stop.")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
-
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
