@@ -1,0 +1,122 @@
+Upgrade ZVER bot into a mini CRM.
+
+Keep all current working features:
+- TELEGRAM_BOT_TOKEN
+- ADMIN_CHAT_ID
+- application form
+- multiple photos
+- admin status buttons
+- “Написать клиенту”
+- auto reminder
+- HTML escaping
+- application IDs
+
+Add these CRM features:
+
+1. Store every application in local JSON storage.
+Create files if needed:
+- applications.json
+- customers.json
+- crm_stats.json
+
+2. Customer history.
+Identify customer by Telegram user ID.
+When a new application arrives, show in the admin message:
+
+If first time:
+🆕 Новый клиент
+
+If returning:
+🟢 Уже обращался
+Обращений: <count>
+Последняя заявка: <date>
+Последние устройства: <last 3 models>
+
+3. Update customer history after every completed application.
+
+4. Add /stats admin command.
+Only works in ADMIN_CHAT_ID.
+
+Show:
+📊 Статистика ZVER
+
+Сегодня:
+- Заявок: X
+- В работе: X
+- Цена согласована: X
+- Сделка завершена: X
+- Отказ: X
+
+За 7 дней:
+- Заявок: X
+- Сделок: X
+- Отказов: X
+- Конверсия: X%
+
+За 30 дней:
+- Заявок: X
+- Сделок: X
+- Отказов: X
+- Конверсия: X%
+
+5. Add /find admin command.
+Only works in ADMIN_CHAT_ID.
+
+Usage:
+- /find ZV-0001
+- /find @username
+- /find 8463353959
+- /find +79812684247
+
+It should search applications by:
+- application ID
+- username
+- user ID
+- phone/contact text
+
+Return the latest matching applications with short summary:
+ID, date, client, model, status, contact.
+
+6. Add deal price flow.
+When admin clicks “✅ Сделка завершена”, bot should ask:
+“💰 За сколько выкупили устройство? Введите сумму числом.”
+
+Admin enters amount, for example:
+42000
+
+Then bot saves deal_price to the application, updates status to “Сделка завершена”, and updates the admin message.
+
+If admin does not want to enter price, allow:
+“пропустить”
+
+7. Update /stats to include:
+- Куплено устройств
+- Общая сумма выкупа
+- Средняя сумма выкупа
+
+8. Add /export admin command.
+Only works in ADMIN_CHAT_ID.
+Generate CSV file with all applications:
+application_id, date, status, client_name, username, user_id, device_type, model, memory, battery, color, condition, defects, city, contact, deal_price
+
+Send the CSV file to ADMIN_CHAT_ID.
+
+9. Add /client admin command.
+Usage:
+- /client @username
+- /client user_id
+
+Show customer card:
+👤 Клиент
+Username
+User ID
+Всего обращений
+Последнее обращение
+Последние устройства
+Сделок завершено
+Общая сумма выкупа
+
+10. Keep code clean and stable.
+Add proper error logging.
+Do not break existing application flow.
+Restart the bot after changes.

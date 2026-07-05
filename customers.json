@@ -1,0 +1,47 @@
+{
+  "8463353959": {
+    "user_id": 8463353959,
+    "username": "zvertech",
+    "full_name": "ZVER | Выкуп Apple",
+    "app_count": 4,
+    "last_app_date": "04.07.2026 18:30",
+    "app_ids": [
+      "ZV-0004",
+      "ZV-0005",
+      "ZV-0007",
+      "ZV-0009"
+    ],
+    "models": [
+      "iPhone iPhone X",
+      "iPhone iPhone X",
+      "iPhone iPhone X",
+      "iPhone iPhone 11"
+    ]
+  },
+  "1817865364": {
+    "user_id": 1817865364,
+    "username": "cmtfuck",
+    "full_name": "ㅤcmt",
+    "app_count": 1,
+    "last_app_date": "02.07.2026 14:09",
+    "app_ids": [
+      "ZV-0006"
+    ],
+    "models": [
+      "iPhone iPhone 15 Pro Max"
+    ]
+  },
+  "1615652093": {
+    "user_id": 1615652093,
+    "username": "Dr_True1213",
+    "full_name": "Арцём",
+    "app_count": 1,
+    "last_app_date": "02.07.2026 19:01",
+    "app_ids": [
+      "ZV-0008"
+    ],
+    "models": [
+      "iPhone iPhone 12"
+    ]
+  }
+}

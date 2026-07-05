@@ -1,0 +1,89 @@
+Update the ZVER Telegram bot with these improvements:
+
+1. Remove the separate step "Does the device turn on?"
+Do not ask this as a separate question anymore.
+Keep "❌ Не включается" as one of the External condition options.
+
+External condition options must be:
+- ✨ Отличное
+- 👍 Хорошее
+- 👌 Среднее
+- 😬 Плохое
+- 🔧 После ремонта
+- ❌ Не включается
+
+2. Fix defects selection UX.
+Defects must work like a checkbox list in one message:
+- User can select multiple defects.
+- Do not send a new message after every selected defect.
+- Edit the same message and same inline keyboard.
+- Selected defects should show with "✅".
+- Unselected defects should show without checkmark.
+- Text must say:
+"⚠️ Какие есть неисправности?
+Выберите все подходящие варианты, затем нажмите ✅ Дефекты выбраны."
+
+Defect options:
+- Нет дефектов
+- Разбит экран
+- Разбита задняя крышка
+- Face ID не работает
+- Камера не работает
+- Не заряжается
+- Динамик не работает
+- Микрофон не работает
+- Не ловит сеть / Wi-Fi
+- После воды
+- Другие дефекты
+
+If user selects "Нет дефектов", clear all other selected defects.
+If user selects any other defect, remove "Нет дефектов".
+If user selects "Другие дефекты", ask user to type custom defect, then return to the same checkbox list.
+
+3. Improve admin status buttons.
+When admin clicks a status button:
+- Update the status line inside the same application message.
+- Update the inline buttons so the selected status button visibly changes to:
+  "✅ В работе"
+  "✅ Цена согласована"
+  "✅ Сделка завершена"
+  "✅ Отказ"
+- Other buttons stay normal.
+- Show callback notification:
+"Статус обновлён: <status>"
+- Do not send a new message.
+
+4. Add "Написать клиенту" button under every admin application.
+If the client has Telegram username, add button:
+"💬 Написать клиенту"
+URL: https://t.me/<username without @>
+If no username exists, do not add this button.
+
+5. Add auto reminder for unprocessed applications.
+If an application stays in status "Новая заявка" for 30 minutes, send a reminder to ADMIN_CHAT_ID:
+"⏰ Напоминание: заявка #<id> ещё не взята в работу."
+Do not send reminder if status was changed to "В работе", "Цена согласована", "Сделка завершена" or "Отказ".
+
+6. Add application IDs.
+Each application should have a short sequential ID like:
+ZV-0001
+ZV-0002
+ZV-0003
+
+Show it in the admin message:
+"🆔 Заявка: ZV-0001"
+
+Use a simple local storage file to keep the last application number and application statuses.
+
+7. Keep everything else working:
+- TELEGRAM_BOT_TOKEN
+- ADMIN_CHAT_ID
+- Main menu
+- Back button
+- Main menu button
+- Multiple photos
+- Sending photos to admin group
+- Contact sharing button
+- Final user confirmation message
+
+Restart the bot after changes.

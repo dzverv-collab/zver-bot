@@ -1,0 +1,185 @@
+Upgrade the ZVER Telegram bot.
+
+Keep:
+- TELEGRAM_BOT_TOKEN
+- ADMIN_CHAT_ID
+- Sending completed applications to ADMIN_CHAT_ID
+
+Do not add automatic price estimation yet.
+Do not add user comment step.
+
+Make the bot interface more professional.
+
+Requirements:
+
+1. Main menu:
+- 💰 Продать устройство
+- 📱 Узнать стоимость
+- ☎️ Связаться с менеджером
+
+2. Add navigation:
+- ⬅️ Назад on every step
+- 🏠 Главное меню where appropriate
+- /cancel cancels the application
+
+3. Add progress text:
+Show "Шаг X из Y" at the beginning of every question.
+
+4. Sell flow:
+Step 1: Device type buttons:
+- iPhone
+- iPad
+- MacBook
+- Apple Watch
+- AirPods
+- Другое
+
+Step 2:
+For iPhone, first ask series:
+- iPhone X / XS
+- iPhone 11
+- iPhone 12
+- iPhone 13
+- iPhone 14
+- iPhone 15
+- iPhone 16
+- iPhone 17
+- Другая модель
+
+Then show only models from selected series.
+
+Do not include unreleased iPhone 18 models.
+
+For other device types, ask model with text input.
+
+Step 3: Memory buttons:
+- 64 GB
+- 128 GB
+- 256 GB
+- 512 GB
+- 1 TB
+- Другая
+
+Step 4: Battery health buttons:
+- 100–95%
+- 94–90%
+- 89–85%
+- 84–80%
+- Меньше 80%
+- Не знаю
+
+Step 5: Color buttons:
+- Чёрный
+- Белый
+- Серый
+- Синий
+- Зелёный
+- Золотой
+- Фиолетовый
+- Другой
+
+Step 6: Does the device turn on?
+- ✅ Да
+- ❌ Нет
+
+Step 7: External condition buttons:
+- ✨ Отличное
+- 👍 Хорошее
+- 👌 Среднее
+- 😬 Плохое
+- 🔧 После ремонта
+
+Step 8: Defects multi-select:
+Text:
+"⚠️ Какие есть неисправности?
+Выберите все подходящие варианты, затем нажмите ✅ Дефекты выбраны."
+
+Buttons:
+- ✅ Нет дефектов
+- 💥 Разбит экран
+- 🪟 Разбита задняя крышка
+- 👤 Face ID не работает
+- 📷 Камера не работает
+- 🔌 Не заряжается
+- 🔇 Динамик не работает
+- 🎤 Микрофон не работает
+- 📶 Не ловит сеть / Wi-Fi
+- 💧 После воды
+- 📝 Другие дефекты
+- ✅ Дефекты выбраны
+
+Allow selecting multiple defects.
+After each selected defect, show the selected list.
+
+If "Другие дефекты" is selected, ask user to type the defect and add it to selected defects.
+
+Step 9: Photos:
+Ask user to upload photos.
+Allow multiple photos.
+After each photo reply:
+"Фото получил. Пришлите ещё или нажмите ✅ Готово."
+Buttons:
+- ✅ Готово
+- ⬅️ Назад
+
+If user uploads no photos, still allow finishing, but in admin message show "Фото не прикреплены."
+
+Step 10: City buttons:
+- Санкт-Петербург
+- Москва
+- Другой город
+
+If "Другой город", ask text input.
+
+Step 11: Contact:
+Ask phone or Telegram.
+Add button:
+- 📱 Отправить мой контакт
+
+5. Final admin message:
+Send a clean formatted application to ADMIN_CHAT_ID:
+
+🔥 Новая заявка
+
+🟡 Статус: Новая заявка
+
+👤 Client full name
+🔗 Telegram username
+🆔 User ID
+
+──────────────
+
+📱 Device type + model
+💾 Memory
+🔋 Battery
+🎨 Color
+⚡ Turns on
+⭐ External condition
+
+⚠️ Defects:
+- list defects
+
+📍 City
+☎️ Contact
+🕒 Date/time
+
+Then send all uploaded photos.
+
+6. Add inline buttons under the admin application message:
+- 🔵 В работе
+- 🟢 Цена согласована
+- ✅ Сделка завершена
+- ❌ Отказ
+
+When an admin clicks a status button, edit the same application message and update the status line:
+- 🔵 Статус: Менеджер рассматривает заявку
+- 🟢 Статус: Цена согласована
+- ✅ Статус: Сделка завершена
+- ❌ Статус: Отказ
+
+Keep the rest of the application text unchanged.
+
+7. After sending application to admin group, user gets:
+"✅ Спасибо! Ваша заявка принята. Мы свяжемся с вами в ближайшее время."
+
+Restart the bot after changes.

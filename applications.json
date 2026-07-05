@@ -1,0 +1,137 @@
+[
+  {
+    "app_id": "ZV-0004",
+    "date": "02.07.2026 13:04",
+    "user_id": 8463353959,
+    "username": "zvertech",
+    "full_name": "ZVER | Выкуп Apple",
+    "device": "iPhone",
+    "model": "iPhone X",
+    "memory": "64 GB",
+    "battery": "89–85%",
+    "color": "Чёрный",
+    "condition": "✨ Отличное",
+    "defects": [
+      "Face ID не работает",
+      "Не заряжается"
+    ],
+    "city": "Санкт-Петербург",
+    "contact": "+79812684247",
+    "status": "new",
+    "deal_price": null,
+    "photos": []
+  },
+  {
+    "app_id": "ZV-0005",
+    "date": "02.07.2026 13:16",
+    "user_id": 8463353959,
+    "username": "zvertech",
+    "full_name": "ZVER | Выкуп Apple",
+    "device": "iPhone",
+    "model": "iPhone X",
+    "memory": "64 GB",
+    "battery": "89–85%",
+    "color": "Чёрный",
+    "condition": "✨ Отличное",
+    "defects": [
+      "Face ID не работает",
+      "Камера не работает"
+    ],
+    "city": "Санкт-Петербург",
+    "contact": "+79812684247",
+    "status": "rejected",
+    "deal_price": null,
+    "photos": []
+  },
+  {
+    "app_id": "ZV-0006",
+    "date": "02.07.2026 14:09",
+    "user_id": 1817865364,
+    "username": "cmtfuck",
+    "full_name": "ㅤcmt",
+    "device": "iPhone",
+    "model": "iPhone 15 Pro Max",
+    "memory": "512 GB",
+    "battery": "94–90%",
+    "color": "Чёрный",
+    "condition": "✨ Отличное",
+    "defects": [
+      "Нет дефектов"
+    ],
+    "city": "Санкт-Петербург",
+    "contact": "+79045519941",
+    "status": "working",
+    "deal_price": null,
+    "photos": [
+      "AgACAgIAAxkBAAICBmpGcRCzrX6Uw3YDtQpK4nH9mYubAAIJHWsb4QQxSuzHj9yA-jP1AQADAgADeQADPAQ",
+      "AgACAgIAAxkBAAICB2pGcRBrRG_p8PsbKQU0X-YOOaBnAALmHWsbazk5SouzNm86GHxDAQADAgADeQADPAQ"
+    ]
+  },
+  {
+    "app_id": "ZV-0007",
+    "date": "02.07.2026 18:58",
+    "user_id": 8463353959,
+    "username": "zvertech",
+    "full_name": "ZVER | Выкуп Apple",
+    "device": "iPhone",
+    "model": "iPhone X",
+    "memory": "64 GB",
+    "battery": "100–95%",
+    "color": "Чёрный",
+    "condition": "✨ Отличное",
+    "defects": [
+      "Не заряжается",
+      "Не ловит сеть / Wi-Fi"
+    ],
+    "city": "Санкт-Петербург",
+    "contact": "+79812684247",
+    "status": "new",
+    "deal_price": null,
+    "photos": []
+  },
+  {
+    "app_id": "ZV-0008",
+    "date": "02.07.2026 19:01",
+    "user_id": 1615652093,
+    "username": "Dr_True1213",
+    "full_name": "Арцём",
+    "device": "iPhone",
+    "model": "iPhone 12",
+    "memory": "256 GB",
+    "battery": "100–95%",
+    "color": "Синий",
+    "condition": "👍 Хорошее",
+    "defects": [
+      "Камера не работает"
+    ],
+    "city": "Санкт-Петербург",
+    "contact": "+79241232021",
+    "status": "working",
+    "deal_price": null,
+    "photos": [
+      "AgACAgIAAxkBAAICgmpGtWXI6KqN1SKGdcYjhT2huNHcAAKoHWsbpKU5Spi6wmkWaIXtAQADAgADeQADPAQ"
+    ]
+  },
+  {
+    "app_id": "ZV-0009",
+    "date": "04.07.2026 18:30",
+    "user_id": 8463353959,
+    "username": "zvertech",
+    "full_name": "ZVER | Выкуп Apple",
+    "device": "iPhone",
+    "model": "iPhone 11",
+    "memory": "128 GB",
+    "battery": "100–95%",
+    "color": "Белый",
+    "condition": "✨ Отличное",
+    "defects": [
+      "Не ловит сеть / Wi-Fi",
+      "После воды"
+    ],
+    "city": "Санкт-Петербург",
+    "contact": "+79812684247",
+    "status": "new",
+    "deal_price": null,
+    "photos": []
+  }
+]

@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "YQCa2vtHFBEetouEAPNLA"
+uri = "file://assets/welcome.jpg"
+type = "image"
+title = "welcome.jpg — ZVER welcome screen"
+
+[[outputs]]
+id = "ywDs_ND1YKkZO4y1Igo-T"
+uri = "file://assets/success.jpg"
+type = "image"
+title = "success.jpg — ZVER success screen"
