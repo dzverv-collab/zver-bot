@@ -324,6 +324,26 @@ def save_application(app: Dict[str, Any]) -> None:
     _write_json(APPLICATIONS_FILE, apps)
 
 
+def get_application(app_id: str) -> Optional[Dict[str, Any]]:
+    apps = _read_json(APPLICATIONS_FILE, [])
+    for app in apps:
+        if app.get("app_id") == app_id:
+            return app
+    return None
+
+
+def patch_application(app_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    apps = _read_json(APPLICATIONS_FILE, [])
+    updated_app = None
+    for app in apps:
+        if app.get("app_id") == app_id:
+            app.update(updates)
+            updated_app = app
+            break
+    _write_json(APPLICATIONS_FILE, apps)
+    return updated_app
+
+
 def update_application_status(app_id: str, status: str, price: Optional[str] = None) -> None:
     apps = _read_json(APPLICATIONS_FILE, [])
     for app in apps:
@@ -490,12 +510,15 @@ def defects_kb(selected: set[int]) -> InlineKeyboardMarkup:
 def admin_status_kb(app_id: str, username: str = "") -> InlineKeyboardMarkup:
     rows = [
         [
-            InlineKeyboardButton("📌 В работу", callback_data=f"status:{app_id}:working"),
-            InlineKeyboardButton("💰 Цена согласована", callback_data=f"status:{app_id}:agreed"),
+            InlineKeyboardButton("💰 Предложить цену", callback_data=f"admin_hint:{app_id}:price"),
         ],
         [
+            InlineKeyboardButton("📌 В работу", callback_data=f"status:{app_id}:working"),
             InlineKeyboardButton("✅ Выкуплено", callback_data=f"status:{app_id}:done"),
+        ],
+        [
             InlineKeyboardButton("❌ Отказ", callback_data=f"status:{app_id}:rejected"),
+            InlineKeyboardButton("⏰ Напомнить позже", callback_data=f"status:{app_id}:remind"),
         ],
     ]
     if username:
@@ -510,6 +533,10 @@ def status_label(status: str) -> str:
         "agreed": "💰 Цена согласована",
         "done": "✅ Выкуплено",
         "rejected": "❌ Отказ",
+        "remind": "⏰ Напомнить позже",
+        "price_sent": "💰 Цена предложена",
+        "client_agreed": "✅ Клиент согласен",
+        "client_declined": "❌ Клиент отказался",
     }.get(status, status)
 
 
@@ -577,19 +604,35 @@ async def safe_reply(update: Update, text: str, reply_markup=None, parse_mode: s
 
 async def go_home(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data.clear()
+
+    text = (
+        "🍏 <b>ZVER Store</b>\n\n"
+        "🏠 <b>Главное меню</b>\n\n"
+        "💰 Продать устройство\n"
+        "📸 Получить предварительную оценку по фото\n"
+        "☎️ Связаться с менеджером\n"
+        "📢 Перейти в канал ZVER\n\n"
+        "👇 Выберите действие ниже."
+    )
+
     if update.callback_query:
         await update.callback_query.answer()
         await update.callback_query.message.reply_text(
-            "🏠 <b>Главное меню</b>\n\nВыберите действие:",
+            text,
             parse_mode="HTML",
             reply_markup=MAIN_MENU,
         )
-    else:
-        await safe_reply(
-            update,
-            "🏠 <b>Главное меню</b>\n\nВыберите действие:",
-            reply_markup=MAIN_MENU,
-        )
+    elif update.message:
+        if WELCOME_IMAGE.exists():
+            await update.message.reply_photo(
+                photo=WELCOME_IMAGE.open("rb"),
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=MAIN_MENU,
+            )
+        else:
+            await safe_reply(update, text, reply_markup=MAIN_MENU)
+
     return ConversationHandler.END
 
 
@@ -1173,6 +1216,18 @@ async def submit_application(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await notify_admin(context, app_record, customer_before)
 
 
+def client_offer_kb(app_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Согласен", callback_data=f"client_offer:{app_id}:agree"),
+            InlineKeyboardButton("❌ Не подходит", callback_data=f"client_offer:{app_id}:decline"),
+        ],
+        [
+            InlineKeyboardButton("☎️ Связаться с менеджером", url=f"https://t.me/{MANAGER_USERNAME}"),
+        ],
+    ])
+
+
 async def notify_admin(context: ContextTypes.DEFAULT_TYPE, app: Dict[str, Any], customer_before: Optional[Dict[str, Any]]) -> None:
     text = admin_card(app, customer_before)
     username = app.get("username") or ""
@@ -1198,6 +1253,36 @@ async def notify_admin(context: ContextTypes.DEFAULT_TYPE, app: Dict[str, Any], 
     except Exception:
         logger.exception("Failed to send admin notification for %s", app.get("app_id"))
 
+
+async def remind_unprocessed_application(context: ContextTypes.DEFAULT_TYPE) -> None:
+    job_data = context.job.data or {}
+    app_id = job_data.get("app_id")
+    if not app_id:
+        return
+
+    app = get_application(app_id)
+    if not app:
+        return
+
+    if app.get("status") not in {"new", "remind"}:
+        return
+
+    try:
+        await context.bot.send_message(
+            chat_id=ADMIN_CHAT_ID_INT,
+            text=(
+                f"⏰ <b>Напоминание по заявке</b>\n\n"
+                f"🆔 <b>{esc(app_id)}</b>\n"
+                f"Статус: {status_label(app.get('status', 'new'))}\n\n"
+                f"Заявка висит уже 30 минут без обработки."
+            ),
+            parse_mode="HTML",
+            reply_markup=admin_status_kb(app_id, username=app.get("username") or ""),
+        )
+    except Exception:
+        logger.exception("Could not send reminder for %s", app_id)
+
+
 # -----------------------------------------------------------------------------
 # ADMIN HANDLERS
 # -----------------------------------------------------------------------------
@@ -1211,7 +1296,10 @@ async def admin_status_callback(update: Update, context: ContextTypes.DEFAULT_TY
         return
 
     _, app_id, status = parts
-    update_application_status(app_id, status)
+    app_record = patch_application(app_id, {"status": status})
+    if not app_record:
+        await q.answer("Заявка не найдена", show_alert=True)
+        return
 
     try:
         old = q.message.text_html or q.message.text or ""
@@ -1225,12 +1313,169 @@ async def admin_status_callback(update: Update, context: ContextTypes.DEFAULT_TY
         await q.edit_message_text(
             text=new_text,
             parse_mode="HTML",
-            reply_markup=q.message.reply_markup,
+            reply_markup=admin_status_kb(app_id, username=app_record.get("username") or ""),
         )
     except Exception:
         logger.exception("Could not edit status message")
 
+    user_id = app_record.get("user_id")
+
+    # Notify client only on final/meaningful actions.
+    if user_id and status == "working":
+        try:
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=(
+                    f"📌 <b>Заявка {esc(app_id)} в работе</b>\n\n"
+                    f"Менеджер уже смотрит данные устройства.\n"
+                    f"Скоро вернёмся с ответом."
+                ),
+                parse_mode="HTML",
+            )
+        except Exception:
+            logger.exception("Could not notify client for %s", app_id)
+
+    elif user_id and status == "rejected":
+        try:
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=(
+                    f"❌ <b>Заявка {esc(app_id)} отклонена</b>\n\n"
+                    f"К сожалению, сейчас мы не готовы выкупить это устройство по заявленным данным.\n\n"
+                    f"Если хотите уточнить детали — напишите менеджеру: @{MANAGER_USERNAME}"
+                ),
+                parse_mode="HTML",
+            )
+        except Exception:
+            logger.exception("Could not notify client for %s", app_id)
+
+    elif user_id and status == "done":
+        try:
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=(
+                    f"✅ <b>Заявка {esc(app_id)} закрыта</b>\n\n"
+                    f"Спасибо, что выбрали <b>ZVER Store</b> ❤️"
+                ),
+                parse_mode="HTML",
+            )
+        except Exception:
+            logger.exception("Could not notify client for %s", app_id)
+
+    elif status == "remind":
+        try:
+            context.job_queue.run_once(
+                remind_unprocessed_application,
+                when=30 * 60,
+                data={"app_id": app_id},
+                name=f"manual_reminder_{app_id}",
+            )
+        except Exception:
+            logger.exception("Could not schedule manual reminder for %s", app_id)
+
     await q.answer(f"Статус: {status_label(status)}", show_alert=False)
+
+
+async def price_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text(
+            "💰 Как предложить цену:\n\n"
+            "<code>/price ZV-00001 35000</code>\n"
+            "<code>/price ZV-00001 35000-40000</code>",
+            parse_mode="HTML",
+        )
+        return
+
+    app_id = context.args[0].strip()
+    price = " ".join(context.args[1:]).strip()
+
+    app_record = patch_application(app_id, {"status": "price_sent", "deal_price": price})
+    if not app_record:
+        await update.message.reply_text("❌ Заявка не найдена.")
+        return
+
+    user_id = app_record.get("user_id")
+    if not user_id:
+        await update.message.reply_text("❌ У заявки нет user_id.")
+        return
+
+    try:
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=(
+                f"💰 <b>Предварительное предложение по заявке {esc(app_id)}</b>\n\n"
+                f"Мы готовы рассмотреть выкуп примерно за:\n"
+                f"<b>{esc(price)} ₽</b>\n\n"
+                f"⚠️ Финальная цена может измениться после очной проверки устройства.\n\n"
+                f"Вам подходит такое предложение?"
+            ),
+            parse_mode="HTML",
+            reply_markup=client_offer_kb(app_id),
+        )
+        await update.message.reply_text(f"✅ Предложение отправлено клиенту: {app_id} — {price} ₽")
+    except Exception:
+        logger.exception("Could not send price offer for %s", app_id)
+        await update.message.reply_text("❌ Не удалось отправить предложение клиенту.")
+
+
+async def admin_hint_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    q = update.callback_query
+    await q.answer()
+    parts = (q.data or "").split(":")
+    if len(parts) != 3:
+        return
+    _, app_id, action = parts
+    if action == "price":
+        await q.message.reply_text(
+            f"💰 <b>Чтобы предложить цену клиенту:</b>\n\n"
+            f"<code>/price {esc(app_id)} 35000</code>\n"
+            f"<code>/price {esc(app_id)} 35000-40000</code>",
+            parse_mode="HTML",
+        )
+
+
+async def client_offer_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    q = update.callback_query
+    await q.answer()
+
+    parts = (q.data or "").split(":")
+    if len(parts) != 3:
+        return
+
+    _, app_id, action = parts
+    status = "client_agreed" if action == "agree" else "client_declined"
+    app_record = patch_application(app_id, {"status": status})
+
+    if action == "agree":
+        await q.edit_message_text(
+            f"✅ <b>Спасибо!</b>\n\n"
+            f"Вы согласились с предложением по заявке <b>{esc(app_id)}</b>.\n"
+            f"Менеджер скоро свяжется с вами для уточнения деталей.",
+            parse_mode="HTML",
+        )
+    else:
+        await q.edit_message_text(
+            f"❌ <b>Поняли</b>\n\n"
+            f"Вы отказались от предложения по заявке <b>{esc(app_id)}</b>.\n"
+            f"Если хотите обсудить цену — напишите менеджеру: @{MANAGER_USERNAME}",
+            parse_mode="HTML",
+        )
+
+    if app_record:
+        try:
+            await context.bot.send_message(
+                chat_id=ADMIN_CHAT_ID_INT,
+                text=(
+                    f"{'✅' if action == 'agree' else '❌'} <b>Ответ клиента по цене</b>\n\n"
+                    f"🆔 <b>{esc(app_id)}</b>\n"
+                    f"Статус: {status_label(status)}\n"
+                    f"Предложение: <b>{esc(app_record.get('deal_price'))} ₽</b>"
+                ),
+                parse_mode="HTML",
+                reply_markup=admin_status_kb(app_id, username=app_record.get("username") or ""),
+            )
+        except Exception:
+            logger.exception("Could not notify admin about client response %s", app_id)
 
 
 async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1345,8 +1590,11 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("id", id_cmd))
     app.add_handler(CommandHandler("stats", stats_cmd))
+    app.add_handler(CommandHandler("price", price_cmd))
     app.add_handler(CallbackQueryHandler(check_subscription_callback, pattern=r"^check_subscription$"))
     app.add_handler(CallbackQueryHandler(admin_status_callback, pattern=r"^status:"))
+    app.add_handler(CallbackQueryHandler(admin_hint_callback, pattern=r"^admin_hint:"))
+    app.add_handler(CallbackQueryHandler(client_offer_callback, pattern=r"^client_offer:"))
 
     app.add_handler(conv)
 
