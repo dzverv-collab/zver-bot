@@ -214,9 +214,9 @@ MEMORY_KB = ReplyKeyboardMarkup(
 BATTERY_OPTIONS = {"100–95%", "94–90%", "89–85%", "84–80%", "Меньше 80%", "Не знаю"}
 BATTERY_KB = ReplyKeyboardMarkup(
     [
-        ["🟢 100–95%", "🟡 94–90%"],
-        ["🟠 89–85%", "🔴 84–80%"],
-        ["⚠️ Меньше 80%", "❓ Не знаю"],
+        ["🔋 100–95%", "🔋 94–90%"],
+        ["🔋 89–85%", "🔋 84–80%"],
+        ["🔋 Меньше 80%", "❓ Не знаю"],
         NAV_ROW,
     ],
     resize_keyboard=True,
@@ -411,13 +411,14 @@ def step_text(n: int, title: str, question: str) -> str:
             f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "📦 <b>Выберите устройство</b>\n\n"
             "Что хотите продать?\n\n"
-            "💡 Чем точнее ответы — тем точнее предварительная оценка."
+            "💡 Мы выкупаем большинство б/у устройств Apple, в том числе после ремонта и с повреждениями."
         ),
         "Модель iPhone": (
             f"🍏 <b>ZVER Store</b>\n\n"
             f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "📱 <b>Модель iPhone</b>\n\n"
             "Выберите точную модель устройства.\n\n"
+            "✅ В списке есть модели от <b>iPhone X</b> до <b>iPhone 17 Pro Max</b>.\n"
             "⚡ Модель сильнее всего влияет на стоимость."
         ),
         "Модель": (
@@ -439,7 +440,7 @@ def step_text(n: int, title: str, question: str) -> str:
             f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "🔋 <b>Аккумулятор</b>\n\n"
             "Какая максимальная ёмкость батареи?\n\n"
-            "⚡ Если не знаете — выберите <b>«❓ Не знаю»</b>."
+            "💡 Подойдёт любой вариант. Если не знаете — выберите <b>«❓ Не знаю»</b>."
         ),
         "Цвет": (
             f"🍏 <b>ZVER Store</b>\n\n"
@@ -536,6 +537,7 @@ def status_label(status: str) -> str:
         "remind": "⏰ Напомнить позже",
         "price_sent": "💰 Цена предложена",
         "client_agreed": "✅ Клиент согласен",
+        "client_discuss": "💬 Клиент хочет обсудить",
         "client_declined": "❌ Клиент отказался",
     }.get(status, status)
 
@@ -587,7 +589,7 @@ def clean_choice(text: str) -> str:
     prefixes = [
         "📱 ", "📦 ", "💻 ", "⌚ ", "🎧 ",
         "💾 ", "💿 ", "📀 ", "🚀 ", "💎 ", "🌈 ",
-        "🟢 ", "🟡 ", "🟠 ", "🔴 ", "⚠️ ", "❓ ",
+        "🟢 ", "🟡 ", "🟠 ", "🔴 ", "⚠️ ", "❓ ", "🔋 ",
         "⚫ ", "⚪ ", "⚙️ ", "🔵 ", "🟣 ",
         "✨ ", "👍 ", "😐 ", "🔧 ",
     ]
@@ -687,9 +689,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     caption = (
         "🍏 <b>ZVER Store</b>\n\n"
         "💰 <b>Быстрый выкуп техники Apple</b>\n\n"
-        "⚡ Ответ за 5–15 минут\n"
-        "📸 Оценка по фото\n"
-        "🤝 Честная предварительная цена\n\n"
+        "📱 Выкупаем большинство б/у устройств Apple\n"
+        "🔧 После ремонта\n"
+        "💥 С трещинами, сколами и повреждениями корпуса/экрана\n"
+        "🔋 С любой ёмкостью аккумулятора\n"
+        "📲 Модели от <b>iPhone X</b> до <b>iPhone 17 Pro Max</b>\n\n"
+        "⏱ Заполнение займёт около минуты.\n"
         "👇 Выберите действие ниже."
     )
 
@@ -1219,7 +1224,10 @@ async def submit_application(update: Update, context: ContextTypes.DEFAULT_TYPE)
 def client_offer_kb(app_id: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✅ Согласен", callback_data=f"client_offer:{app_id}:agree"),
+            InlineKeyboardButton("✅ Да, подходит", callback_data=f"client_offer:{app_id}:agree"),
+        ],
+        [
+            InlineKeyboardButton("💬 Хочу обсудить", callback_data=f"client_offer:{app_id}:discuss"),
             InlineKeyboardButton("❌ Не подходит", callback_data=f"client_offer:{app_id}:decline"),
         ],
         [
@@ -1376,6 +1384,39 @@ async def admin_status_callback(update: Update, context: ContextTypes.DEFAULT_TY
     await q.answer(f"Статус: {status_label(status)}", show_alert=False)
 
 
+def parse_price_offer(raw: str) -> Optional[str]:
+    text = raw.strip().replace("—", "-").replace("–", "-").replace(" ", "")
+    text = text.lower().replace("руб", "").replace("₽", "")
+
+    multiplier = 1
+    if "тыс" in text or "k" in text:
+        multiplier = 1000
+        text = text.replace("тыс.", "").replace("тыс", "").replace("k", "")
+
+    if "-" in text:
+        parts = [p for p in text.split("-") if p]
+        if len(parts) != 2:
+            return None
+        try:
+            a = int(float(parts[0].replace(",", ".")) * multiplier)
+            b = int(float(parts[1].replace(",", ".")) * multiplier)
+        except ValueError:
+            return None
+        if a < 1000 or b < 1000 or b < a:
+            return None
+        return f"{a:,}–{b:,}".replace(",", " ")
+
+    try:
+        value = int(float(text.replace(",", ".")) * multiplier)
+    except ValueError:
+        return None
+
+    if value < 1000:
+        return None
+
+    return f"{value:,}".replace(",", " ")
+
+
 async def price_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args or len(context.args) < 2:
         await update.message.reply_text(
@@ -1387,7 +1428,11 @@ async def price_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     app_id = context.args[0].strip()
-    price = " ".join(context.args[1:]).strip()
+    raw_price = " ".join(context.args[1:]).strip()
+    price = parse_price_offer(raw_price)
+    if not price:
+        await update.message.reply_text("Введите сумму от 1 000 ₽. Например: 35000 или 35000-38000")
+        return
 
     app_record = patch_application(app_id, {"status": "price_sent", "deal_price": price})
     if not app_record:
@@ -1403,11 +1448,12 @@ async def price_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await context.bot.send_message(
             chat_id=user_id,
             text=(
-                f"💰 <b>Предварительное предложение по заявке {esc(app_id)}</b>\n\n"
-                f"Мы готовы рассмотреть выкуп примерно за:\n"
+                f"💰 <b>Предварительная оценка по заявке {esc(app_id)}</b>\n\n"
+                f"По информации и фотографиям мы готовы предложить:\n"
                 f"<b>{esc(price)} ₽</b>\n\n"
-                f"⚠️ Финальная цена может измениться после очной проверки устройства.\n\n"
-                f"Вам подходит такое предложение?"
+                f"💡 Мы ценим честность и всегда стараемся сохранить предварительную оценку. "
+                f"Если устройство соответствует описанию и фотографиям, стоимость, как правило, остаётся без изменений.\n\n"
+                f"Подходит ли вам такая предварительная оценка?"
             ),
             parse_mode="HTML",
             reply_markup=client_offer_kb(app_id),
@@ -1424,14 +1470,72 @@ async def admin_hint_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     parts = (q.data or "").split(":")
     if len(parts) != 3:
         return
+
     _, app_id, action = parts
     if action == "price":
+        context.bot_data.setdefault("pending_price_requests", {})[q.from_user.id] = app_id
         await q.message.reply_text(
-            f"💰 <b>Чтобы предложить цену клиенту:</b>\n\n"
-            f"<code>/price {esc(app_id)} 35000</code>\n"
-            f"<code>/price {esc(app_id)} 35000-40000</code>",
+            f"💰 <b>Введите сумму или диапазон по заявке {esc(app_id)}</b>\n\n"
+            f"Можно написать так:\n"
+            f"<code>35000</code>\n"
+            f"<code>35000-38000</code>\n"
+            f"<code>35-38 тыс</code>\n\n"
+            f"Минимальная сумма — <b>от 1 000 ₽</b>.",
             parse_mode="HTML",
         )
+
+
+async def admin_price_text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    pending = context.bot_data.setdefault("pending_price_requests", {})
+    app_id = pending.get(update.effective_user.id)
+
+    if not app_id:
+        return
+
+    raw = update.message.text.strip()
+    price = parse_price_offer(raw)
+
+    if not price:
+        await update.message.reply_text(
+            "Введите сумму от 1 000 ₽.\n\n"
+            "Например:\n"
+            "<code>35000</code>\n"
+            "<code>35000-38000</code>\n"
+            "<code>35-38 тыс</code>",
+            parse_mode="HTML",
+        )
+        return
+
+    pending.pop(update.effective_user.id, None)
+
+    app_record = patch_application(app_id, {"status": "price_sent", "deal_price": price})
+    if not app_record:
+        await update.message.reply_text("❌ Заявка не найдена.")
+        return
+
+    user_id = app_record.get("user_id")
+    if not user_id:
+        await update.message.reply_text("❌ У заявки нет user_id.")
+        return
+
+    try:
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=(
+                f"💰 <b>Предварительная оценка по заявке {esc(app_id)}</b>\n\n"
+                f"По информации и фотографиям мы готовы предложить:\n"
+                f"<b>{esc(price)} ₽</b>\n\n"
+                f"💡 Мы ценим честность и всегда стараемся сохранить предварительную оценку. "
+                f"Если устройство соответствует описанию и фотографиям, стоимость, как правило, остаётся без изменений.\n\n"
+                f"Подходит ли вам такая предварительная оценка?"
+            ),
+            parse_mode="HTML",
+            reply_markup=client_offer_kb(app_id),
+        )
+        await update.message.reply_text(f"✅ Предложение отправлено клиенту: {app_id} — {price} ₽")
+    except Exception:
+        logger.exception("Could not send price offer for %s", app_id)
+        await update.message.reply_text("❌ Не удалось отправить предложение клиенту.")
 
 
 async def client_offer_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1443,30 +1547,43 @@ async def client_offer_callback(update: Update, context: ContextTypes.DEFAULT_TY
         return
 
     _, app_id, action = parts
-    status = "client_agreed" if action == "agree" else "client_declined"
+    status_map = {
+        "agree": "client_agreed",
+        "discuss": "client_discuss",
+        "decline": "client_declined",
+    }
+    status = status_map.get(action, "client_declined")
     app_record = patch_application(app_id, {"status": status})
 
     if action == "agree":
         await q.edit_message_text(
             f"✅ <b>Спасибо!</b>\n\n"
-            f"Вы согласились с предложением по заявке <b>{esc(app_id)}</b>.\n"
-            f"Менеджер скоро свяжется с вами для уточнения деталей.",
+            f"Вы согласились с предварительной оценкой по заявке <b>{esc(app_id)}</b>.\n"
+            f"Менеджер скоро свяжется с вами для согласования деталей.",
+            parse_mode="HTML",
+        )
+    elif action == "discuss":
+        await q.edit_message_text(
+            f"💬 <b>Хорошо, обсудим</b>\n\n"
+            f"Менеджер получил ваш ответ по заявке <b>{esc(app_id)}</b> и свяжется с вами, чтобы обсудить стоимость.",
             parse_mode="HTML",
         )
     else:
         await q.edit_message_text(
             f"❌ <b>Поняли</b>\n\n"
-            f"Вы отказались от предложения по заявке <b>{esc(app_id)}</b>.\n"
-            f"Если хотите обсудить цену — напишите менеджеру: @{MANAGER_USERNAME}",
+            f"Вы отказались от предварительной оценки по заявке <b>{esc(app_id)}</b>.\n"
+            f"Если захотите обсудить условия — напишите менеджеру: @{MANAGER_USERNAME}",
             parse_mode="HTML",
         )
 
     if app_record:
+        icon = "✅" if action == "agree" else "💬" if action == "discuss" else "❌"
+        title = "Клиент согласился" if action == "agree" else "Клиент хочет обсудить" if action == "discuss" else "Клиент отказался"
         try:
             await context.bot.send_message(
                 chat_id=ADMIN_CHAT_ID_INT,
                 text=(
-                    f"{'✅' if action == 'agree' else '❌'} <b>Ответ клиента по цене</b>\n\n"
+                    f"{icon} <b>{title}</b>\n\n"
                     f"🆔 <b>{esc(app_id)}</b>\n"
                     f"Статус: {status_label(status)}\n"
                     f"Предложение: <b>{esc(app_record.get('deal_price'))} ₽</b>"
@@ -1595,6 +1712,7 @@ def build_app() -> Application:
     app.add_handler(CallbackQueryHandler(admin_status_callback, pattern=r"^status:"))
     app.add_handler(CallbackQueryHandler(admin_hint_callback, pattern=r"^admin_hint:"))
     app.add_handler(CallbackQueryHandler(client_offer_callback, pattern=r"^client_offer:"))
+    app.add_handler(MessageHandler(filters.ChatType.GROUPS & filters.TEXT & ~filters.COMMAND, admin_price_text_handler))
 
     app.add_handler(conv)
 
