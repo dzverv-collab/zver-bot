@@ -74,6 +74,9 @@ MANAGER_USERNAME = os.getenv("MANAGER_USERNAME", "zvertech").lstrip("@")
 DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+WELCOME_IMAGE = Path("assets/welcome.png")
+SUCCESS_IMAGE = Path("assets/success.png")
+
 APPLICATIONS_FILE = DATA_DIR / "applications.json"
 CUSTOMERS_FILE = DATA_DIR / "customers.json"
 COUNTER_FILE = DATA_DIR / "counter.json"
@@ -382,16 +385,79 @@ def esc(value: Any) -> str:
 
 
 def step_text(n: int, title: str, question: str) -> str:
-    percent = int(n / TOTAL_STEPS * 100)
-    filled = max(1, int(percent / 10))
-    bar = "🟩" * filled + "⬜" * (10 - filled)
-    return (
-        f"<b>🍏 ZVER Store</b>\n\n"
-        f"<b>Шаг {n} из {TOTAL_STEPS}</b>\n"
-        f"{bar} {percent}%\n\n"
-        f"<b>{esc(title)}</b>\n"
-        f"{question}"
-    )
+    screens = {
+        "Тип устройства": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "📦 <b>Что хотите продать?</b>\n\n"
+            "Выберите устройство Apple ниже.\n"
+            "💡 Чем точнее данные — тем быстрее менеджер сможет дать предварительную оценку."
+        ),
+        "Модель iPhone": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "📱 <b>Модель iPhone</b>\n\n"
+            "Выберите точную модель устройства.\n"
+            "⚡ Это один из главных факторов цены."
+        ),
+        "Модель": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "📱 <b>Модель устройства</b>\n\n"
+            "Напишите модель текстом.\n"
+            "Например: <b>MacBook Air M2</b>, <b>iPad Pro 12.9</b>, <b>Apple Watch Series 9</b>."
+        ),
+        "Память": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "💾 <b>Память</b>\n\n"
+            "Сколько памяти у устройства?\n"
+            "👇 Просто выберите нужный вариант."
+        ),
+        "АКБ": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "🔋 <b>Аккумулятор</b>\n\n"
+            "Какая максимальная ёмкость батареи?\n"
+            "⚡ Если не знаете — выберите <b>«Не знаю»</b>."
+        ),
+        "Цвет": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "🎨 <b>Цвет корпуса</b>\n\n"
+            "Какого цвета устройство?\n"
+            "✨ Выберите вариант ниже."
+        ),
+        "Состояние": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "🛠 <b>Состояние</b>\n\n"
+            "Оцените внешний вид устройства.\n"
+            "🤝 Лучше указать честно — так менеджер быстрее даст реальную цену."
+        ),
+        "Дефекты": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "⚠️ <b>Дефекты</b>\n\n"
+            "Отметьте всё, что есть.\n"
+            "☑️ Можно выбрать несколько вариантов."
+        ),
+        "Фотографии": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "📸 <b>Фотографии</b>\n\n"
+            "Добавьте 2–5 фото устройства:\n\n"
+            "✅ экран\n"
+            "✅ заднюю крышку\n"
+            "✅ боковые грани\n"
+            "✅ дефекты, если есть\n\n"
+            "📎 Когда закончите — нажмите <b>«✅ Готово»</b>."
+        ),
+        "Город": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "📍 <b>Город</b>\n\n"
+            "Где находится устройство?\n"
+            "🚗 Это поможет выбрать удобный формат сделки."
+        ),
+        "Контакт": (
+            "🍏 <b>ZVER Store</b>\n\n"
+            "☎️ <b>Контакт для связи</b>\n\n"
+            "Оставьте номер телефона или Telegram.\n"
+            "👨‍💻 Менеджер свяжется с вами после проверки заявки."
+        ),
+    }
+    return screens.get(title, f"🍏 <b>ZVER Store</b>\n\n<b>{esc(title)}</b>\n\n{question}")
 
 
 def channel_kb() -> InlineKeyboardMarkup:
@@ -547,24 +613,40 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.clear()
     if not await ensure_subscription(update, context):
         return
-    await safe_reply(
-        update,
+
+    caption = (
         "🍏 <b>ZVER Store</b>\n\n"
-        "Быстро выкупаем устройства Apple.\n"
-        "Заполните короткую анкету — мы получим данные, фото и свяжемся с вами для предварительной оценки.\n\n"
-        "Выберите действие ниже:",
-        reply_markup=MAIN_MENU,
+        "💰 <b>Быстрый выкуп техники Apple</b>\n\n"
+        "⚡ Ответ за 5–15 минут\n"
+        "📸 Оценка по фото\n"
+        "🤝 Честная предварительная цена\n\n"
+        "👇 Выберите действие ниже."
     )
+
+    if WELCOME_IMAGE.exists():
+        await update.message.reply_photo(
+            photo=WELCOME_IMAGE.open("rb"),
+            caption=caption,
+            parse_mode="HTML",
+            reply_markup=MAIN_MENU,
+        )
+    else:
+        await safe_reply(update, caption, reply_markup=MAIN_MENU)
+
 
 
 async def price_info(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await safe_reply(
         update,
-        "💰 <b>Стоимость выкупа</b>\n\n"
-        "Цена зависит от модели, памяти, состояния, АКБ, ремонта и актуального рынка.\n\n"
-        "Чтобы получить предварительную оценку — нажмите <b>«📱 Продать устройство»</b> и заполните анкету.",
+        "💰 <b>Узнать стоимость</b>\n\n"
+        "Цена зависит от модели, памяти, состояния, АКБ, ремонта и рынка.\n\n"
+        "📱 Заполните короткую анкету\n"
+        "📸 Прикрепите фото\n"
+        "👨‍💻 Менеджер даст предварительную оценку\n\n"
+        "👇 Нажмите <b>«📱 Продать устройство»</b>, чтобы начать.",
         reply_markup=MAIN_MENU,
     )
+
 
 
 async def contact_manager(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -572,18 +654,22 @@ async def contact_manager(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         update,
         f"☎️ <b>Связаться с менеджером</b>\n\n"
         f"Напишите: @{MANAGER_USERNAME}\n\n"
-        f"Или заполните анкету — так мы быстрее поймём модель и состояние устройства.",
+        f"💡 Если хотите продать устройство — лучше сначала заполнить анкету.\n"
+        f"Так менеджер сразу увидит модель, состояние и фото.",
         reply_markup=MAIN_MENU,
     )
+
 
 
 async def channel_info(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await safe_reply(
         update,
         "📢 <b>Канал ZVER</b>\n\n"
-        "Там будут кейсы, отзывы, поступления и развитие проекта.",
+        "Там будут отзывы, кейсы, поступления устройств и развитие проекта.\n\n"
+        "❤️ Можно подписаться и следить за нами.",
         reply_markup=channel_kb(),
     )
+
 
 
 async def check_subscription_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1027,13 +1113,27 @@ async def submit_application(update: Update, context: ContextTypes.DEFAULT_TYPE)
         model=full_model,
     )
 
-    await update.message.reply_text(
-        f"✅ <b>Заявка принята!</b>\n\n"
-        f"Номер заявки: <b>{esc(app_id)}</b>\n\n"
-        f"Мы получили данные устройства и скоро свяжемся с вами для предварительной оценки.",
-        parse_mode="HTML",
-        reply_markup=MAIN_MENU,
+    success_caption = (
+        f"🎉 <b>Заявка отправлена!</b>\n\n"
+        f"🆔 Номер заявки: <b>{esc(app_id)}</b>\n\n"
+        f"📨 Мы уже получили информацию об устройстве.\n"
+        f"⏱ Обычно отвечаем в течение <b>5–15 минут</b>.\n\n"
+        f"❤️ Спасибо, что выбрали <b>ZVER Store</b>."
     )
+
+    if SUCCESS_IMAGE.exists():
+        await update.message.reply_photo(
+            photo=SUCCESS_IMAGE.open("rb"),
+            caption=success_caption,
+            parse_mode="HTML",
+            reply_markup=MAIN_MENU,
+        )
+    else:
+        await update.message.reply_text(
+            success_caption,
+            parse_mode="HTML",
+            reply_markup=MAIN_MENU,
+        )
 
     await notify_admin(context, app_record, customer_before)
 
