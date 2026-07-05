@@ -153,9 +153,9 @@ NAV_ROW = [BACK, HOME]
 DEVICE_OPTIONS = {"iPhone", "iPad", "MacBook", "Apple Watch", "AirPods", "Другое"}
 DEVICE_KB = ReplyKeyboardMarkup(
     [
-        ["iPhone", "iPad"],
-        ["MacBook", "Apple Watch"],
-        ["AirPods", "Другое"],
+        ["📱 iPhone", "📱 iPad"],
+        ["💻 MacBook", "⌚ Apple Watch"],
+        ["🎧 AirPods", "📦 Другое"],
         [HOME],
     ],
     resize_keyboard=True,
@@ -204,8 +204,8 @@ IPHONE_MODELS_KB = ReplyKeyboardMarkup(
 MEMORY_OPTIONS = {"64 GB", "128 GB", "256 GB", "512 GB", "1 TB", "Другая"}
 MEMORY_KB = ReplyKeyboardMarkup(
     [
-        ["64 GB", "128 GB", "256 GB"],
-        ["512 GB", "1 TB", "Другая"],
+        ["💾 64 GB", "💿 128 GB", "📀 256 GB"],
+        ["🚀 512 GB", "💎 1 TB", "🌈 Другая"],
         NAV_ROW,
     ],
     resize_keyboard=True,
@@ -214,9 +214,9 @@ MEMORY_KB = ReplyKeyboardMarkup(
 BATTERY_OPTIONS = {"100–95%", "94–90%", "89–85%", "84–80%", "Меньше 80%", "Не знаю"}
 BATTERY_KB = ReplyKeyboardMarkup(
     [
-        ["100–95%", "94–90%"],
-        ["89–85%", "84–80%"],
-        ["Меньше 80%", "Не знаю"],
+        ["🟢 100–95%", "🟡 94–90%"],
+        ["🟠 89–85%", "🔴 84–80%"],
+        ["⚠️ Меньше 80%", "❓ Не знаю"],
         NAV_ROW,
     ],
     resize_keyboard=True,
@@ -225,20 +225,20 @@ BATTERY_KB = ReplyKeyboardMarkup(
 COLOR_OPTIONS = {"Чёрный", "Белый", "Серый", "Синий", "Зелёный", "Золотой", "Фиолетовый", "Другой"}
 COLOR_KB = ReplyKeyboardMarkup(
     [
-        ["Чёрный", "Белый", "Серый"],
-        ["Синий", "Зелёный", "Золотой"],
-        ["Фиолетовый", "Другой"],
+        ["⚫ Чёрный", "⚪ Белый", "⚙️ Серый"],
+        ["🔵 Синий", "🟢 Зелёный", "🟡 Золотой"],
+        ["🟣 Фиолетовый", "🌈 Другой"],
         NAV_ROW,
     ],
     resize_keyboard=True,
 )
 
-CONDITION_OPTIONS = {"✨ Отличное", "Хорошее", "Среднее", "Плохое", "После ремонта", "❌ Не включается"}
+CONDITION_OPTIONS = {"Отличное", "Хорошее", "Среднее", "Плохое", "После ремонта", "Не включается"}
 CONDITION_KB = ReplyKeyboardMarkup(
     [
-        ["✨ Отличное", "Хорошее"],
-        ["Среднее", "Плохое"],
-        ["После ремонта", "❌ Не включается"],
+        ["✨ Отличное", "👍 Хорошее"],
+        ["😐 Среднее", "⚠️ Плохое"],
+        ["🔧 После ремонта", "❌ Не включается"],
         NAV_ROW,
     ],
     resize_keyboard=True,
@@ -387,55 +387,64 @@ def esc(value: Any) -> str:
 def step_text(n: int, title: str, question: str) -> str:
     screens = {
         "Тип устройства": (
-            "🍏 <b>ZVER Store</b>\n\n"
-            "📦 <b>Что хотите продать?</b>\n\n"
-            "Выберите устройство Apple ниже.\n"
-            "💡 Чем точнее данные — тем быстрее менеджер сможет дать предварительную оценку."
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
+            "📦 <b>Выберите устройство</b>\n\n"
+            "Что хотите продать?\n\n"
+            "💡 Чем точнее ответы — тем точнее предварительная оценка."
         ),
         "Модель iPhone": (
-            "🍏 <b>ZVER Store</b>\n\n"
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "📱 <b>Модель iPhone</b>\n\n"
-            "Выберите точную модель устройства.\n"
-            "⚡ Это один из главных факторов цены."
+            "Выберите точную модель устройства.\n\n"
+            "⚡ Модель сильнее всего влияет на стоимость."
         ),
         "Модель": (
-            "🍏 <b>ZVER Store</b>\n\n"
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "📱 <b>Модель устройства</b>\n\n"
-            "Напишите модель текстом.\n"
-            "Например: <b>MacBook Air M2</b>, <b>iPad Pro 12.9</b>, <b>Apple Watch Series 9</b>."
+            "Напишите модель текстом.\n\n"
+            "💡 Например: <b>MacBook Air M2</b>, <b>iPad Pro 12.9</b>, <b>Apple Watch Series 9</b>."
         ),
         "Память": (
-            "🍏 <b>ZVER Store</b>\n\n"
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "💾 <b>Память</b>\n\n"
-            "Сколько памяти у устройства?\n"
-            "👇 Просто выберите нужный вариант."
+            "Сколько памяти у устройства?\n\n"
+            "💡 Обычно чем больше память — тем выше оценка."
         ),
         "АКБ": (
-            "🍏 <b>ZVER Store</b>\n\n"
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "🔋 <b>Аккумулятор</b>\n\n"
-            "Какая максимальная ёмкость батареи?\n"
-            "⚡ Если не знаете — выберите <b>«Не знаю»</b>."
+            "Какая максимальная ёмкость батареи?\n\n"
+            "⚡ Если не знаете — выберите <b>«❓ Не знаю»</b>."
         ),
         "Цвет": (
-            "🍏 <b>ZVER Store</b>\n\n"
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "🎨 <b>Цвет корпуса</b>\n\n"
-            "Какого цвета устройство?\n"
+            "Какого цвета устройство?\n\n"
             "✨ Выберите вариант ниже."
         ),
         "Состояние": (
-            "🍏 <b>ZVER Store</b>\n\n"
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "🛠 <b>Состояние</b>\n\n"
-            "Оцените внешний вид устройства.\n"
+            "Оцените внешний вид устройства.\n\n"
             "🤝 Лучше указать честно — так менеджер быстрее даст реальную цену."
         ),
         "Дефекты": (
-            "🍏 <b>ZVER Store</b>\n\n"
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "⚠️ <b>Дефекты</b>\n\n"
-            "Отметьте всё, что есть.\n"
+            "Отметьте всё, что есть.\n\n"
             "☑️ Можно выбрать несколько вариантов."
         ),
         "Фотографии": (
-            "🍏 <b>ZVER Store</b>\n\n"
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "📸 <b>Фотографии</b>\n\n"
             "Добавьте 2–5 фото устройства:\n\n"
             "✅ экран\n"
@@ -445,19 +454,21 @@ def step_text(n: int, title: str, question: str) -> str:
             "📎 Когда закончите — нажмите <b>«✅ Готово»</b>."
         ),
         "Город": (
-            "🍏 <b>ZVER Store</b>\n\n"
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "📍 <b>Город</b>\n\n"
-            "Где находится устройство?\n"
+            "Где находится устройство?\n\n"
             "🚗 Это поможет выбрать удобный формат сделки."
         ),
         "Контакт": (
-            "🍏 <b>ZVER Store</b>\n\n"
+            f"🍏 <b>ZVER Store</b>\n\n"
+            f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "☎️ <b>Контакт для связи</b>\n\n"
-            "Оставьте номер телефона или Telegram.\n"
+            "Оставьте номер телефона или Telegram.\n\n"
             "👨‍💻 Менеджер свяжется с вами после проверки заявки."
         ),
     }
-    return screens.get(title, f"🍏 <b>ZVER Store</b>\n\n<b>{esc(title)}</b>\n\n{question}")
+    return screens.get(title, f"🍏 <b>ZVER Store</b>\n\n📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n<b>{esc(title)}</b>\n\n{question}")
 
 
 def channel_kb() -> InlineKeyboardMarkup:
@@ -541,6 +552,22 @@ def admin_card(app: Dict[str, Any], customer_before: Optional[Dict[str, Any]]) -
         f"☎️ <b>Контакт:</b> {esc(app.get('contact'))}\n\n"
         f"<b>Статус:</b> {status_label(app.get('status', 'new'))}"
     )
+
+
+def clean_choice(text: str) -> str:
+    """Remove leading emoji/pictogram from reply keyboard buttons."""
+    text = text.strip()
+    prefixes = [
+        "📱 ", "📦 ", "💻 ", "⌚ ", "🎧 ",
+        "💾 ", "💿 ", "📀 ", "🚀 ", "💎 ", "🌈 ",
+        "🟢 ", "🟡 ", "🟠 ", "🔴 ", "⚠️ ", "❓ ",
+        "⚫ ", "⚪ ", "⚙️ ", "🔵 ", "🟣 ",
+        "✨ ", "👍 ", "😐 ", "🔧 ",
+    ]
+    for prefix in prefixes:
+        if text.startswith(prefix):
+            return text[len(prefix):].strip()
+    return text
 
 
 async def safe_reply(update: Update, text: str, reply_markup=None, parse_mode: str = "HTML") -> None:
@@ -802,7 +829,7 @@ async def sell_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def step_device(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    text = update.message.text.strip()
+    text = clean_choice(update.message.text)
     if text not in DEVICE_OPTIONS:
         await safe_reply(update, "Выберите тип устройства кнопкой ниже.", reply_markup=DEVICE_KB)
         return DEVICE
@@ -845,7 +872,7 @@ async def step_model_text(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def step_memory(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    text = update.message.text.strip()
+    text = clean_choice(update.message.text)
     if text == BACK:
         if context.user_data.get("device") == "iPhone":
             return await ask_model(update, context)
@@ -861,7 +888,7 @@ async def step_memory(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 
 async def step_battery(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    text = update.message.text.strip()
+    text = clean_choice(update.message.text)
     if text == BACK:
         return await ask_memory(update, context)
     if text not in BATTERY_OPTIONS:
@@ -873,7 +900,7 @@ async def step_battery(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
 
 async def step_color(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    text = update.message.text.strip()
+    text = clean_choice(update.message.text)
     if text == BACK:
         return await ask_battery(update, context)
     if text not in COLOR_OPTIONS:
@@ -885,14 +912,22 @@ async def step_color(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def step_condition(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    text = update.message.text.strip()
+    text = clean_choice(update.message.text)
     if text == BACK:
         return await ask_color(update, context)
     if text not in CONDITION_OPTIONS:
         await safe_reply(update, "Оцените состояние кнопкой ниже.", reply_markup=CONDITION_KB)
         return CONDITION
 
-    context.user_data["condition"] = text
+    display_condition = {
+        "Отличное": "✨ Отличное",
+        "Хорошее": "👍 Хорошее",
+        "Среднее": "😐 Среднее",
+        "Плохое": "⚠️ Плохое",
+        "После ремонта": "🔧 После ремонта",
+        "Не включается": "❌ Не включается",
+    }.get(text, text)
+    context.user_data["condition"] = display_condition
     context.user_data["defects_selected_idx"] = set()
     context.user_data["defects_custom"] = []
     return await ask_defects(update, context)
