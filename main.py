@@ -411,15 +411,23 @@ def step_text(n: int, title: str, question: str) -> str:
             f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "📦 <b>Выберите устройство</b>\n\n"
             "Что хотите продать?\n\n"
-            "💚 <b>Покупаем устройства Apple практически в любом состоянии.</b>\n\nМы регулярно покупаем:\n\n📱 модели прошлых лет (от iPhone X и новее);\n💥 с разбитым экраном;\n📱 с трещинами на корпусе или задней крышке;\n🔧 после ремонта;\n🔋 с любой ёмкостью аккумулятора;\n⚠️ с любыми неисправностями и дефектами.\n\n✨ Чем честнее вы опишете состояние устройства, тем точнее будет предварительная оценка.\n\n🤝 Даже если сомневаетесь, подходит ли ваше устройство — просто отправьте заявку. Мы обязательно её рассмотрим."
+            "💚 <b>Покупаем устройства Apple практически в любом состоянии.</b>\n\n"
+            "Мы регулярно покупаем:\n\n"
+            "📱 модели прошлых лет (от iPhone X и новее);\n"
+            "💥 с разбитым экраном;\n"
+            "📱 с трещинами на корпусе или задней крышке;\n"
+            "🔧 после ремонта;\n"
+            "🔋 с любой ёмкостью аккумулятора;\n"
+            "⚠️ с любыми неисправностями и дефектами.\n\n"
+            "✨ Чем честнее вы опишете состояние устройства, тем точнее будет предварительная оценка.\n\n"
+            "🤝 Даже если сомневаетесь, подходит ли ваше устройство — просто отправьте заявку. Мы обязательно её рассмотрим."
         ),
         "Модель iPhone": (
             f"🍏 <b>ZVER Store</b>\n\n"
             f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "📱 <b>Модель iPhone</b>\n\n"
             "Выберите точную модель устройства.\n\n"
-            "✅ В списке есть модели от <b>iPhone X</b> до <b>iPhone 17 Pro Max</b>.\n"
-            "⚡ Модель сильнее всего влияет на стоимость."
+            "✅ В списке есть модели от <b>iPhone X</b> до <b>iPhone 17 Pro Max</b>."
         ),
         "Модель": (
             f"🍏 <b>ZVER Store</b>\n\n"
@@ -467,12 +475,16 @@ def step_text(n: int, title: str, question: str) -> str:
             f"🍏 <b>ZVER Store</b>\n\n"
             f"📍 <b>Шаг {n}/{TOTAL_STEPS}</b>\n\n"
             "📸 <b>Фотографии</b>\n\n"
-            "Добавьте 2–5 фото устройства:\n\n"
-            "✅ экран\n"
-            "✅ заднюю крышку\n"
-            "✅ боковые грани\n"
-            "✅ дефекты, если есть\n\n"
-            "📎 Когда закончите — нажмите <b>«✅ Готово»</b>."
+            "Для максимально точной оценки рекомендуем отправить:\n\n"
+            "✅ экран;\n"
+            "✅ заднюю крышку;\n"
+            "✅ боковые грани;\n"
+            "✅ места с повреждениями (если есть);\n"
+            "✅ экран <b>«Об этом устройстве»</b>;\n"
+            "✅ экран <b>«История деталей и обслуживания»</b>, если он есть.\n\n"
+            "💡 Чем больше информации вы отправите, тем точнее будет предварительная оценка.\n\n"
+            "ℹ️ Если не знаете, где находятся эти разделы — ничего страшного. Просто отправьте фотографии устройства.\n\n"
+            "📎 После загрузки фотографий нажмите <b>«✅ Готово»</b>."
         ),
         "Город": (
             f"🍏 <b>ZVER Store</b>\n\n"
@@ -578,7 +590,8 @@ def admin_card(app: Dict[str, Any], customer_before: Optional[Dict[str, Any]]) -
         f"⚠️ <b>Дефекты:</b>\n{defects_text}\n\n"
         f"📷 <b>Фото:</b> {photos_count} шт.\n"
         f"📍 <b>Город:</b> {esc(app.get('city'))}\n"
-        f"☎️ <b>Контакт:</b> {esc(app.get('contact'))}\n\n"
+        f"☎️ <b>Контакт:</b> {esc(app.get('contact'))}\n"
+        f"{('✅ <b>Финальная цена:</b> ' + esc(app.get('final_price')) + ' ₽\\n') if app.get('final_price') else ''}\n"
         f"<b>Статус:</b> {status_label(app.get('status', 'new'))}"
     )
 
@@ -1304,6 +1317,23 @@ async def admin_status_callback(update: Update, context: ContextTypes.DEFAULT_TY
         return
 
     _, app_id, status = parts
+    if status == "done":
+        app_record = get_application(app_id)
+        if not app_record:
+            await q.answer("Заявка не найдена", show_alert=True)
+            return
+
+        context.bot_data.setdefault("pending_done_price_requests", {})[q.from_user.id] = app_id
+        await q.message.reply_text(
+            f"💰 <b>Введите финальную цену выкупа по заявке {esc(app_id)}</b>\n\n"
+            f"Например:\n"
+            f"<code>35000</code>\n"
+            f"<code>35000-38000</code>\n\n"
+            f"После ввода суммы заявка будет закрыта как <b>✅ Выкуплено</b>.",
+            parse_mode="HTML",
+        )
+        return
+
     app_record = patch_application(app_id, {"status": status})
     if not app_record:
         await q.answer("Заявка не найдена", show_alert=True)
@@ -1486,6 +1516,9 @@ async def admin_hint_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def admin_price_text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if await admin_done_price_text_handler(update, context):
+        return
+
     pending = context.bot_data.setdefault("pending_price_requests", {})
     app_id = pending.get(update.effective_user.id)
 
@@ -1536,6 +1569,61 @@ async def admin_price_text_handler(update: Update, context: ContextTypes.DEFAULT
     except Exception:
         logger.exception("Could not send price offer for %s", app_id)
         await update.message.reply_text("❌ Не удалось отправить предложение клиенту.")
+
+
+async def admin_done_price_text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    pending = context.bot_data.setdefault("pending_done_price_requests", {})
+    app_id = pending.get(update.effective_user.id)
+
+    if not app_id:
+        return False
+
+    raw = update.message.text.strip()
+    price = parse_price_offer(raw)
+
+    if not price:
+        await update.message.reply_text(
+            "Введите финальную сумму от 1 000 ₽.\n\n"
+            "Например:\n"
+            "<code>35000</code>\n"
+            "<code>35000-38000</code>",
+            parse_mode="HTML",
+        )
+        return True
+
+    pending.pop(update.effective_user.id, None)
+
+    app_record = patch_application(app_id, {
+        "status": "done",
+        "final_price": price,
+    })
+
+    if not app_record:
+        await update.message.reply_text("❌ Заявка не найдена.")
+        return True
+
+    await update.message.reply_text(
+        f"✅ <b>Заявка закрыта как выкупленная</b>\n\n"
+        f"🆔 <b>{esc(app_id)}</b>\n"
+        f"💰 Финальная цена: <b>{esc(price)} ₽</b>",
+        parse_mode="HTML",
+    )
+
+    user_id = app_record.get("user_id")
+    if user_id:
+        try:
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=(
+                    f"✅ <b>Сделка по заявке {esc(app_id)} завершена</b>\n\n"
+                    f"Спасибо, что выбрали <b>ZVER Store</b> ❤️"
+                ),
+                parse_mode="HTML",
+            )
+        except Exception:
+            logger.exception("Could not notify client about done status for %s", app_id)
+
+    return True
 
 
 async def client_offer_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
